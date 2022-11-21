@@ -3,7 +3,7 @@ import binascii
  
 import casbin
 import casbin_sqlalchemy_adapter
-from postgresql_watcher import PostgresqlWatcher
+# from postgresql_watcher import PostgresqlWatcher
  
 from fastapi import FastAPI
 from starlette.authentication import AuthenticationBackend, AuthenticationError, SimpleUser, AuthCredentials
@@ -42,9 +42,21 @@ class BasicAuth(AuthenticationBackend):
  
 adapter = casbin_sqlalchemy_adapter.Adapter(ADAPTER_URL)
 enforcer = casbin.Enforcer(MODEL_PATH, adapter)
-watcher = PostgresqlWatcher(host=WATCHER_HOST, port=WATCHER_PORT, user=WATCHER_USER, password=WATCHER_PASSWORD, dbname=WATCHER_DBNAME)
-watcher.set_update_callback(enforcer.load_policy)
-enforcer.set_watcher(watcher)
+# watcher = PostgresqlWatcher(host=WATCHER_HOST, port=WATCHER_PORT, user=WATCHER_USER, password=WATCHER_PASSWORD, dbname=WATCHER_DBNAME)
+# watcher.set_update_callback(enforcer.load_policy)
+# enforcer.set_watcher(watcher)
+
+def load(event):
+    enforcer.load_policy()
+
+from casbin_redis_watcher import new_watcher, WatcherOptions
+test_option = WatcherOptions()
+test_option.host = "localhost"
+test_option.port = "6379"
+test_option.channel = "test"
+test_option.optional_update_callback = load
+w = new_watcher(test_option)
+enforcer.set_watcher(w)
  
 app.add_middleware(CasbinMiddleware, enforcer=enforcer)
 app.add_middleware(AuthenticationMiddleware, backend=BasicAuth())
@@ -60,4 +72,5 @@ async def auth_test():
 
 @app.get('/update')
 async def update():
-    return  watcher.update()
+    import random
+    return  enforcer.add_policy(str(random.randint(1,100)), '/' + str(random.randint(1,100)), 'GET')
