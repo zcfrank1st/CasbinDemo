@@ -1,0 +1,1 @@
+curl -i -u alice:123 http://localhost:8000/dataset1/protected
