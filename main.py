@@ -3,21 +3,21 @@ import casbin_sqlalchemy_adapter
 from fastapi import FastAPI
 from starlette.middleware.authentication import AuthenticationMiddleware 
 from fastapi_authz import CasbinMiddleware
+import yaml
 
 from middleware import BasicAuth
- 
- 
-# ------------
-ADAPTER_URL='postgresql+psycopg2://postgres:1234@127.0.0.1/postgres'
-MODEL_PATH='./rbac_model.conf'
-# ------------
+
+
+with open('config.yaml', 'r') as f:
+    config_dict = yaml.safe_load(f)
+
+ADAPTER_URI=config_dict['adapter_uri']
+MODEL_PATH=config_dict['model_path']
  
  
 app = FastAPI()
- 
 
- 
-adapter = casbin_sqlalchemy_adapter.Adapter(ADAPTER_URL)
+adapter = casbin_sqlalchemy_adapter.Adapter(ADAPTER_URI)
 enforcer = casbin.Enforcer(MODEL_PATH, adapter)
 
 # def load(event):
